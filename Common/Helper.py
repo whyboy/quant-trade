@@ -4,3 +4,16 @@ def index_helper(str_list, target_str):
         if tmp == target_str:
             return index
     return -1
+
+def write_dict_to_file(dict_val, save_file_path):
+    sorted_keys = sorted(dict_val.keys())
+    with open(save_file_path, 'w') as f:
+        for key in sorted_keys:
+            f.write(key + ":")
+            for val in dict_val[key]:
+                try:
+                    f.write(str(val)+'\n')
+                except:
+                    for tmp in val:
+                        f.write(str(tmp) + ' ')
+                    f.write('\n')

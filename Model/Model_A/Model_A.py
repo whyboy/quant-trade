@@ -1,14 +1,13 @@
-from Common import DateCalculator
-import numpy as np
-from Common import StockInfo
-from datetime import datetime
-from Common import LocalParser
+import sys
+sys.path.append('../')
+from Common import DataCalculator
+from Common import Helper
 from DataLoader import DataLoader
-
+from datetime import datetime
+import numpy as np
 
 class Model(object):
     def __init__(self, ip, port):
-        self.StockInfo = StockInfo.StockInfo(ip, port)
         self.type_count = 5
         self.data_loader = DataLoader.DataLoader(ip, port)
 
@@ -63,7 +62,7 @@ class Model(object):
         date2type_weighted = dict()
         datetime2type_list = []
         date2price_list = []
-        zongguben_list = self.StockInfo.get_zongguben(code_list)
+        zongguben_list = self.data_loader.get_zongguben(code_list)
         datetime_union = None
         for (idx, code) in enumerate(code_list):
             (datetime2type, date2price) = self.get_datetime2type_and_date2price(code, category)
@@ -101,15 +100,29 @@ class Model(object):
 
     def strategy(self):
         file_path = "C:/Users/why/Desktop/Stock/data/创业板50/创业板50-20201115.xls"
-        code2business = LocalParser.get_stockCode2business(file_path)
-        business2code = LocalParser.get_business2stockCodes('C:/Users/why/Desktop/Stock/data/行业板块/')
+        code2business = self.data_loader.get_stockCode2business(file_path)
+        business2code = self.data_loader.get_business2stockCodes('C:/Users/why/Desktop/Stock/data/行业板块/')
         print(code2business)
 
         # Get the 创业板50 stocks code list.
         code_list = code2business.keys()
 
+        date2type_weighted = self.get_compose_date2type(code_list, 2)
+        save_file_path = 'C:/Users/why/Desktop/quant-trade-data/'
+
+        Helper.write_dict_to_file(date2type_weighted, save_file_path+'baseStock')
+
         for idx, code in enumerate(code_list):
             print("cur idx: %d   code: %s" % (idx, code))
             business = code2business[code]
             business_code_list = business2code[business]
-            self.get_compose_date2type(business_code_list, 2)
+            date2type_weighted_business = self.get_compose_date2type(business_code_list, 2)
+
+        
+
+            with open(save_file_path_1 + 'date2type_weighted', 'w') as f:
+                for date, type_weighted in date2type_weighted.items():
+                    f.write(date + ":")
+                    for val in type_weighted:
+                        f.write(str(val) + ' ')
+                    f.write('\n')

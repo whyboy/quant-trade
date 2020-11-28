@@ -13,6 +13,7 @@ class DataLoader(object):
         self.Api = TdxHq_API()
         self.IP = ip
         self.Port = port
+        self.Max_bar_count = 800
 
     # Given a stock and return it's business.
     def get_stockCode2business(file_path) -> dict:
@@ -79,12 +80,10 @@ class DataLoader(object):
         return store_file_path
 
 
-    # Given a code list with start  and end date, get the security_bars data with dictionary format.
+    # Given a code list, get the security_bars data with dictionary format.
     # code2data: the key is code, the value is data.
-    # The time-spand is [start_date, end_date]
     def download_security_bars(self, stock_code_list, category=2):
-        success = False
-        while not success:
+        while True:
             try:
                 with self.Api.connect(self.IP, self.Port):
                     for stock_code in stock_code_list:
@@ -93,11 +92,55 @@ class DataLoader(object):
                         for i in range(10):
                             data += self.Api.get_security_bars(category,market,stock_code,(9-i)*800,800)
                         data_df = self.Api.to_df(data)
-                        store_file_path = DataLoader.get_store_file_path(stock_code, category)
-                        data_df.to_csv(store_file_path)
-                        success = True
+                        return data_df
             except:
                 print("failure download bars, trying again!")
+
+    # Given a code list and start date_time_day, get the security_bars data with dictionary format.
+    # code2data: the key is code, the value is data.
+    def download_security_bars_append(self, stock_code_list, category):
+        cur_date_time_day = datetime.datetime.now().strftime("%Y-%m-%d")
+        while True:
+            try:
+                with self.Api.connect(self.IP, self.Port):
+                    for stock_code in stock_code_list:
+                        market = self.get_market(stock_code)
+                        store_file_path = self.get_store_file_path()
+                        old_data = pd.read_csv(store_file_path)
+                        date_time_dict = None
+                        if old_data.shape[0] != 0:
+                            date_time_dict = {key: 1 for key in old_data['datetime']}
+                            latest_date_time = old_data['datetime'].values()[-1]
+                            date_time_day = latest_date_time.split()[0]
+                            trade_days = DataCalculator.calculate_trade_days(date_time_day, cur_date_time_day)
+                            bars_count = trade_days * 240 // self.category2minutes(category)
+                        else:
+                            bars_count = 8000
+
+                        new_data = []
+                        batch = 800
+                        start = bars_count - batch
+                        while start >= 0:
+                            new_data += self.Api.get_security_bars(category, market, stock_code, start, batch)
+                            start -= batch
+
+                        mod = bars_count % batch
+                        if mod != 0:
+                            new_data += self.Api.get_security_bars(category, market, stock_code, 0, mod)
+                        new_data_df = self.Api.to_df(new_data)
+
+                        if date_time_dict is None:
+
+                        else:
+                            for row in new_data_df.iterrows():
+                                date_time = row['datetime']
+                                if (date_time not in date_time_dict):
+                                    old_data.append(row)
+
+                        return old_data
+            except:
+                print("failure download bars, trying again!")
+
 
     def upload_security_bars(self, stock_code_list, category=2):
         data_list = []
@@ -105,9 +148,9 @@ class DataLoader(object):
         for stock_code in stock_code_list:
             store_file_path = DataLoader.get_store_file_path(stock_code, category)
             if not os.path.exists(store_file_path):
-                self.download_security_bars([stock_code], category)
-
-            data = pd.read_csv(store_file_path)
+                data = self.download_security_bars([stock_code], category)
+            else:
+                data = self.download_security_bars_append()
             data_list.append(data)
         return data_list
 

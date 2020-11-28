@@ -1,5 +1,5 @@
-from Model_B import model
+from Model.Model_A import Model_A
 
 if __name__ == '__main__':
-    model_b = model.Model('119.147.212.81', 7709)
-    model_b.strategy()
+    model_obj = Model_A.Model('119.147.212.81', 7709)
+    model_obj.strategy()
