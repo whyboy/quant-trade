@@ -7,9 +7,9 @@ from datetime import datetime
 import numpy as np
 
 class Model(object):
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, source_data_dir):
         self.type_count = 5
-        self.data_loader = DataLoader.DataLoader(ip, port)
+        self.data_loader = DataLoader.DataLoader(ip, port, source_data_dir)
 
     @staticmethod
     def __get_volume_price_type(volume_diff, price_diff):
@@ -107,22 +107,15 @@ class Model(object):
         # Get the 创业板50 stocks code list.
         code_list = code2business.keys()
 
+        # 获取个股所组成的指数 时间——类型 字典.
         date2type_weighted = self.get_compose_date2type(code_list, 2)
-        save_file_path = 'C:/Users/why/Desktop/quant-trade-data/'
+        save_file_path = 'C:/Users/why/Desktop/quant-trade/result/'
 
         Helper.write_dict_to_file(date2type_weighted, save_file_path+'baseStock')
 
-        for idx, code in enumerate(code_list):
-            print("cur idx: %d   code: %s" % (idx, code))
-            business = code2business[code]
-            business_code_list = business2code[business]
-            date2type_weighted_business = self.get_compose_date2type(business_code_list, 2)
-
-        
-
-            with open(save_file_path_1 + 'date2type_weighted', 'w') as f:
-                for date, type_weighted in date2type_weighted.items():
-                    f.write(date + ":")
-                    for val in type_weighted:
-                        f.write(str(val) + ' ')
-                    f.write('\n')
+        # # 获取每只个股包含的行业指数 时间——类型 字典 并存储起来
+        # for idx, code in enumerate(code_list):
+        #     print("cur idx: %d   code: %s" % (idx, code))
+        #     business = code2business[code]
+        #     business_code_list = business2code[business]
+        #     date2type_weighted_business = self.get_compose_date2type(business_code_list, 2)

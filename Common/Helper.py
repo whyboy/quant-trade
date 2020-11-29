@@ -12,8 +12,9 @@ def write_dict_to_file(dict_val, save_file_path):
             f.write(key + ":")
             for val in dict_val[key]:
                 try:
-                    f.write(str(val)+'\n')
+                    f.write("%.4lf" % val + '|')
                 except:
                     for tmp in val:
-                        f.write(str(tmp) + ' ')
+                        f.write("%.4lf" % val + '|')
                     f.write('\n')
+            f.write('\n')
