@@ -91,6 +91,12 @@ class DataLoader(object):
                         for i in range(10):
                             data += self.Api.get_security_bars(category,market,stock_code,(9-i)*800,800)
                         data_df = self.Api.to_df(data)
+                        for idx in range(data_df.shape[0]):
+                            date_tmp = data_df.loc[idx,'datetime'].replace('/', '-')
+                            date_tmp = datetime.datetime.strptime(date_tmp, "%Y-%m-%d %H:%M")
+                            date_tmp = datetime.datetime.strftime(date_tmp, "%Y-%m-%d %H:%M")
+                            data_df.loc[idx, 'datetime'] = date_tmp
+
                         store_data_path = self.get_store_file_path(stock_code,category)
                         data_df.to_csv(store_data_path, index=False)
                         return data_df
@@ -132,6 +138,14 @@ class DataLoader(object):
                             append_data += self.Api.get_security_bars(category, market, stock_code, 0, mod)
                         append_data_df = self.Api.to_df(append_data)
 
+                        # Transform the datetime format.
+                        # from "2020/9/27 10:00" -> "2020-09-27 10:00"
+                        for idx in range(append_data_df.shape[0]):
+                            date_tmp = append_data_df.loc[idx, 'datetime'].replace('/', '-')
+                            date_tmp = datetime.datetime.strptime(date_tmp, "%Y-%m-%d %H:%M")
+                            date_tmp = datetime.datetime.strftime(date_tmp, "%Y-%m-%d %H:%M")
+                            append_data_df.loc[idx, 'datetime'] = date_tmp
+
                         if date_time_dict is None:
                             old_data_df = append_data_df
 
@@ -139,7 +153,7 @@ class DataLoader(object):
                             for idx, row in enumerate(append_data_df.itertuples()):
                                 date_time = getattr(row, 'datetime')
                                 if date_time not in date_time_dict:
-                                    old_data_df = pd.concat([old_data_df,append_data_df[idx::]], axis=0)
+                                    old_data_df = pd.concat([old_data_df, append_data_df[idx::]], axis=0)
                                     break
                         old_data_df.to_csv(store_file_path, index=False)
                         return old_data_df

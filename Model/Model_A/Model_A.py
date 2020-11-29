@@ -5,6 +5,7 @@ from Common import Helper
 from DataLoader import DataLoader
 from datetime import datetime
 import numpy as np
+import os
 
 class Model(object):
     def __init__(self, ip, port, source_data_dir):
@@ -13,13 +14,21 @@ class Model(object):
 
     @staticmethod
     def __get_volume_price_type(volume_diff, price_diff):
+
+        # 1. 量价齐升
         if volume_diff > 0 and price_diff > 0:
             return 0
-        elif volume_diff > 0 and price_diff < 0:
-            return 1
+
+        # 2. 量减价升
         elif volume_diff < 0 and price_diff > 0:
-            return 2
+            return 1
+
+        # 3. 量减价减
         elif volume_diff < 0 and price_diff < 0:
+            return 2
+
+        # 4. 量增价减
+        elif volume_diff > 0 and price_diff < 0:
             return 3
         else:
             return 4
@@ -73,6 +82,18 @@ class Model(object):
             else:
                 datetime_union = datetime_union.union(set(datetime2type.keys()))
 
+        # target_datetime = "2020-11-27 10:30"
+        # for (idx, code) in enumerate(code_list):
+        #     datetime2type = datetime2type_list[idx]
+        #
+        #     print("idx:%d  stock code: %s" % (idx, code))
+        #     print(datetime2type.keys())
+        #     print(len(datetime2type.keys()))
+        #     if target_datetime in datetime2type:
+        #         print(datetime2type[target_datetime])
+        #         os.system("pause")
+
+
         datetime_intersection_sorted = sorted(datetime_union)
         for datetime_str in datetime_intersection_sorted:
             market_value_list = []
@@ -85,7 +106,12 @@ class Model(object):
                 market_value_list.append(market_value)
 
             tot_market_value = sum(market_value_list)
-            weight_list = [tmp / tot_market_value for tmp in market_value_list]
+
+            # 1.根据市值求取权重
+            # weight_list = [tmp / tot_market_value for tmp in market_value_list]
+
+            # 2.均横权重
+            weight_list = [1.0/len(market_value_list) for tmp in market_value_list]
 
             type_weight = np.array([0.] * self.type_count)
             for idx, datetime2type in enumerate(datetime2type_list):
@@ -105,7 +131,7 @@ class Model(object):
         print(code2business)
 
         # Get the 创业板50 stocks code list.
-        code_list = code2business.keys()
+        code_list = [code for code in code2business.keys()]
 
         # 获取个股所组成的指数 时间——类型 字典.
         date2type_weighted = self.get_compose_date2type(code_list, 2)
